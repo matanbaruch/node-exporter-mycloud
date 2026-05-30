@@ -10,10 +10,10 @@ from the dashboard's **Apps → Install Manually** page — then set the listen 
 built-in web page. The exporter publishes the NAS's hardware and OS metrics over HTTP so a Prometheus
 server can scrape them.
 
-> **Status:** built for and targeting the My Cloud EX2 Ultra (firmware 5.33.102, kernel `4.14.22-armada`,
-> ARMv7). Every change is round-trip-verified in CI (APKG header, armv7 `node_exporter`, expected files),
-> but this build has **not been confirmed on physical hardware yet** — on-device execution is your final
-> test. Built off the same packaging approach as the confirmed-working
+> **Status:** confirmed working on a physical My Cloud EX2 Ultra (firmware 5.33.102, kernel
+> `4.14.22-armada`, ARMv7) — installed from the dashboard and serving metrics on `:9100` for Prometheus
+> to scrape. Every change is also round-trip-verified in CI (APKG header, armv7 `node_exporter`, expected
+> files). Built off the same packaging approach as
 > [tailscale-mycloud](https://github.com/matanbaruch/tailscale-mycloud).
 
 ---

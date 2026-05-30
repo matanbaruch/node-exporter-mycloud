@@ -98,9 +98,9 @@ cd node-exporter-mycloud
 
   <div class="panel">
     <h2 class="warn">Status &amp; security</h2>
-    <p>Targets the My Cloud EX2 Ultra (firmware 5.33.102, ARMv7). Every change is round-trip-verified in CI
-    (APKG header, armv7 <code>node_exporter</code>, expected files), but this build has <b>not been confirmed on physical
-    hardware yet</b> — on-device execution is your final test.</p>
+    <p><b>Confirmed working</b> on a physical My Cloud EX2 Ultra (firmware 5.33.102, ARMv7): installed from the
+    dashboard and serving metrics on <code>:9100</code> for Prometheus to scrape. Every change is also
+    round-trip-verified in CI (APKG header, armv7 <code>node_exporter</code>, expected files).</p>
     <p class="muted"><b>The metrics endpoint is unauthenticated and binds all interfaces.</b> Anyone who can reach the port can
     read system metrics. Keep the NAS off the public internet and firewall the port to your Prometheus host — or expose it only
     over a private overlay (e.g. pair it with
