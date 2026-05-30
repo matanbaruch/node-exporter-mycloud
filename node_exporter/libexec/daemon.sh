@@ -15,6 +15,22 @@ CONFIG="$STATE_DIR/config"
 TEXTFILE_DIR="$STATE_DIR/textfile"
 NODE_EXPORTER="${INSTALL_DIR}/bin/node_exporter"
 
+# True if the node_exporter binary is running. We match the process *name*
+# (/proc/<pid>/comm == "node_exporter") rather than grepping `ps`, because the
+# binary, this script's dir and the CGI all share the string "node_exporter":
+# a loose `ps | grep node_exporter` would match the scripts/CGI too (so the
+# "already running" guard would always be true and the binary would never
+# launch), and it would also depend on whether the device's `ps` prints the
+# full command line. comm is exactly "node_exporter" for the binary and "sh" /
+# "python3" for the scripts and CGI, so the match is unambiguous under any `ps`.
+ne_running() {
+	for c in /proc/[0-9]*/comm; do
+		[ -r "$c" ] || continue
+		[ "$(cat "$c" 2>/dev/null)" = node_exporter ] && return 0
+	done
+	return 1
+}
+
 mkdir -p "$STATE_DIR"
 # Always present so the textfile collector has somewhere to read from when enabled.
 mkdir -p "$TEXTFILE_DIR"
@@ -26,12 +42,7 @@ if [ -f "$CONFIG" ]; then
 fi
 [ -n "$ARGS" ] || ARGS="--web.listen-address=:9100"
 
-# Already running? Match the daemon's full binary path, not a bare "node_exporter"
-# -- the install dir, this script and the CGI all contain "node_exporter", so a
-# loose match would always be true and the binary would never actually launch.
-# busybox-friendly ps|grep (pgrep -f isn't always present).
-# shellcheck disable=SC2009
-if ps 2>/dev/null | grep -v grep | grep -q 'node_exporter/bin/node_exporter'; then
+if ne_running; then
 	echo "node_exporter already running"
 	exit 0
 fi
@@ -47,13 +58,11 @@ nohup "$NODE_EXPORTER" $ARGS \
 
 # Give it a moment to bind so a status fetch right after this doesn't race startup.
 i=0
-# shellcheck disable=SC2009
-while [ "$i" -lt 10 ] && ! ps 2>/dev/null | grep -v grep | grep -q 'node_exporter/bin/node_exporter'; do
+while [ "$i" -lt 10 ] && ! ne_running; do
 	sleep 1
 	i=$((i + 1))
 done
-# shellcheck disable=SC2009
-if ps 2>/dev/null | grep -v grep | grep -q 'node_exporter/bin/node_exporter'; then
+if ne_running; then
 	echo "node_exporter started ($ARGS)"
 else
 	echo "WARNING: node_exporter did not stay up; see $STATE_DIR/node_exporter.log"

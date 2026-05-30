@@ -12,6 +12,7 @@ prints a short message so a stray traceback never lands in the HTTP response.
 """
 
 import cgi
+import glob
 import os
 import subprocess
 import sys
@@ -94,11 +95,19 @@ def configured_port():
 
 
 def daemon_running():
-    rc, _ = run(
-        ["sh", "-c", "ps 2>/dev/null | grep -v grep | grep -q 'node_exporter/bin/node_exporter'"],
-        timeout=10,
-    )
-    return rc == 0
+    # Match the process *name* (/proc/<pid>/comm == "node_exporter") rather than
+    # grepping `ps`: the binary, the install dir and this CGI all contain the
+    # string "node_exporter", and the result must not depend on whether the
+    # device's `ps` prints the full command line. comm is exactly "node_exporter"
+    # for the binary, and "sh"/"python3" for the scripts and CGI.
+    for path in glob.glob("/proc/[0-9]*/comm"):
+        try:
+            with open(path) as fh:
+                if fh.read().strip() == "node_exporter":
+                    return True
+        except OSError:
+            continue
+    return False
 
 
 def ensure_daemon():
