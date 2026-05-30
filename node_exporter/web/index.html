@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Node Exporter</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --ink:#1f2328; --muted:#656d76; --accent:#e6522c; --ok:#1a7f37; --warn:#9a6700; --line:#d0d7de; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:14px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; color:var(--ink); background:var(--bg); padding:16px; }
+  h1 { font-size:20px; margin:0 0 2px; }
+  h2 { font-size:15px; margin:0 0 10px; }
+  .sub { color:var(--muted); margin:0 0 16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:16px; }
+  label.field { display:block; margin:10px 0; }
+  label.field > span { display:block; font-weight:600; margin-bottom:4px; }
+  input[type=text], input[type=number] { width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:6px; font:inherit; }
+  .check { display:flex; align-items:flex-start; gap:8px; margin:8px 0; }
+  .check input { margin-top:3px; }
+  .check .desc { color:var(--muted); font-size:12.5px; }
+  .row { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; align-items:center; }
+  button { font:inherit; padding:8px 14px; border-radius:6px; border:1px solid var(--line); background:#fff; cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  button:active { transform:translateY(1px); }
+  pre { background:#0d1117; color:#e6edf3; padding:12px; border-radius:8px; overflow:auto; max-height:340px; white-space:pre-wrap; word-break:break-word; margin:0; }
+  .muted { color:var(--muted); }
+  a { color:var(--accent); }
+  .hint { font-size:12.5px; color:var(--muted); margin-top:4px; }
+</style>
+</head>
+<body>
+  <h1>Node Exporter</h1>
+  <p class="sub">Expose this WD My Cloud EX2 Ultra's hardware &amp; OS metrics for Prometheus to scrape.</p>
+
+  <div class="card">
+    <h2>Status <button id="refresh" style="float:right">↻ Refresh</button></h2>
+    <pre id="status">loading…</pre>
+  </div>
+
+  <div class="card">
+    <h2>Configuration</h2>
+    <form id="config-form" onsubmit="return false;">
+      <label class="field">
+        <span>Listen port</span>
+        <input type="number" name="port" min="1" max="65535" value="9100" autocomplete="off" placeholder="9100">
+        <div class="hint">node_exporter serves metrics at <code>http://&lt;nas-ip&gt;:&lt;port&gt;/metrics</code> on all interfaces. Point your Prometheus scrape target here.</div>
+      </label>
+
+      <label class="check"><input type="checkbox" name="collector_processes">
+        <span>Processes collector <span class="desc">— per-state process and thread counts (<code>--collector.processes</code>, off by default).</span></span></label>
+      <label class="check"><input type="checkbox" name="collector_systemd">
+        <span>systemd collector <span class="desc">— service unit states (<code>--collector.systemd</code>; reports nothing if the OS isn't systemd-based).</span></span></label>
+      <label class="check"><input type="checkbox" name="collector_textfile">
+        <span>Textfile collector <span class="desc">— expose custom <code>*.prom</code> files dropped in <code>/mnt/HD/HD_a2/.systemfile/node_exporter/textfile</code>.</span></span></label>
+
+      <p class="hint">Saving writes the configuration to the persistent volume and restarts node_exporter so the new flags take effect. Unchecked toggles are removed.</p>
+      <div class="row">
+        <button type="submit" class="primary" id="btn-save">Save &amp; restart</button>
+        <button type="button" id="btn-metrics">Open /metrics ↗</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Service</h2>
+    <div class="row">
+      <button type="button" id="btn-start">Start</button>
+      <button type="button" id="btn-stop">Stop</button>
+      <button type="button" id="btn-restart">Restart</button>
+      <a href="https://prometheus.io/docs/guides/node-exporter/" target="_blank" rel="noopener" style="margin-left:auto">node_exporter docs ↗</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Output</h2>
+    <pre id="output">—</pre>
+  </div>
+
+<script>
+  var CGI = '/cgi-bin/node_exporter.py';
+  var statusEl = document.getElementById('status');
+  var outputEl = document.getElementById('output');
+
+  function setOut(text) { outputEl.textContent = text; }
+
+  async function loadStatus() {
+    statusEl.textContent = 'loading…';
+    try {
+      var res = await fetch(CGI, { method: 'GET', cache: 'no-store' });
+      statusEl.textContent = await res.text();
+    } catch (e) {
+      statusEl.textContent = 'Failed to load status: ' + e;
+    }
+  }
+
+  async function post(fields) {
+    var data = new FormData();
+    Object.keys(fields).forEach(function (k) { data.append(k, fields[k]); });
+    setOut('working…');
+    try {
+      var res = await fetch(CGI, { method: 'POST', body: data, cache: 'no-store' });
+      setOut(await res.text());
+    } catch (e) {
+      setOut('Request failed: ' + e);
+    }
+    loadStatus();
+  }
+
+  function save() {
+    var form = document.getElementById('config-form');
+    var fd = new FormData(form);
+    var fields = { action: 'save' };
+    fd.forEach(function (v, k) { fields[k] = v; });  // checkboxes only present when checked
+    post(fields);
+  }
+
+  document.getElementById('refresh').addEventListener('click', loadStatus);
+  document.getElementById('config-form').addEventListener('submit', save);
+  document.getElementById('btn-save').addEventListener('click', save);
+  document.getElementById('btn-metrics').addEventListener('click', function () {
+    var port = (document.querySelector('input[name=port]').value || '9100').trim();
+    window.open(location.protocol + '//' + location.hostname + ':' + port + '/metrics', '_blank', 'noopener');
+  });
+  document.getElementById('btn-start').addEventListener('click', function () { post({ action: 'start' }); });
+  document.getElementById('btn-stop').addEventListener('click', function () { post({ action: 'stop' }); });
+  document.getElementById('btn-restart').addEventListener('click', function () { post({ action: 'restart' }); });
+
+  loadStatus();
+</script>
+</body>
+</html>

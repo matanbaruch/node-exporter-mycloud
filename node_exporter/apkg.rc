@@ -1,0 +1,19 @@
+Package:	node_exporter
+Version:	1.11.1
+Packager:	matanbaruch
+Email:
+Homepage:	https://prometheus.io/docs/guides/node-exporter/
+Description:	Prometheus node_exporter - exposes hardware and OS metrics of this NAS over HTTP for Prometheus to scrape, with a web UI to set the listen port and collectors.
+Icon:			node_exporter.png
+AddonShowName:	Node Exporter
+AddonIndexPage:	index.html
+AddonUsedPort:	9100
+InstDepend:
+InstConflict:
+StartDepend:
+StartConflict:
+CenterType: 1
+UserControl: 0
+MinFWVer:
+MaxFWVer:
+IndividualFlag: 0

@@ -1,0 +1,23 @@
+[project]
+name = "node-exporter-mycloud"
+version = "0.0.0"  # not published to PyPI; the shipped version lives in node_exporter/apkg.rc
+description = "Prometheus node_exporter app for Western Digital My Cloud EX2 Ultra (OS5)"
+requires-python = ">=3.9"
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+# The CGI logic under node_exporter/cgi-bin/ is importable for unit tests.
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["node_exporter/cgi-bin"]
+addopts = "-ra"
+
+[tool.ruff]
+# Only lint our own Python; the device runs Python 3 (CGI), keep it portable.
+target-version = "py39"
+line-length = 100
+extend-exclude = [".reference-wdpksrc"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prometheus node_exporter for WD My Cloud EX2 Ultra</title>
+<meta name="description" content="Install Prometheus node_exporter on a Western Digital My Cloud EX2 Ultra (OS5) with a web UI to set the listen port and collectors.">
+<link rel="icon" href="assets/node_exporter.png">
+<style>
+  :root { --bg:#0d1117; --panel:#161b22; --ink:#e6edf3; --muted:#9aa4af; --line:#30363d; --accent:#e6522c; --accent2:#22c55e; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:16px/1.65 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--ink); }
+  .wrap { max-width:860px; margin:0 auto; padding:32px 20px 64px; }
+  header { display:flex; align-items:center; gap:16px; margin-bottom:8px; }
+  header img { width:56px; height:56px; border-radius:12px; }
+  h1 { font-size:28px; margin:0; }
+  .tag { color:var(--muted); margin:2px 0 0; }
+  .badges { margin:18px 0 26px; display:flex; flex-wrap:wrap; gap:8px; }
+  .badges img { height:20px; }
+  .cta { display:inline-block; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; padding:12px 20px; border-radius:8px; margin:6px 8px 6px 0; }
+  .cta.alt { background:transparent; border:1px solid var(--line); color:var(--ink); }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:18px 0; }
+  h2 { font-size:19px; margin:0 0 12px; }
+  ol, ul { margin:0; padding-left:22px; }
+  li { margin:6px 0; }
+  code { background:#0b0f14; border:1px solid var(--line); border-radius:5px; padding:1px 6px; font-size:13.5px; }
+  pre { background:#0b0f14; border:1px solid var(--line); border-radius:8px; padding:12px 14px; overflow:auto; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
+  .feat { background:#0b0f14; border:1px solid var(--line); border-radius:8px; padding:12px 14px; }
+  .feat b { display:block; margin-bottom:2px; }
+  .muted { color:var(--muted); }
+  a { color:var(--accent); }
+  .warn { border-left:3px solid #d29922; padding-left:14px; color:#e3b341; }
+  footer { color:var(--muted); font-size:13.5px; margin-top:30px; border-top:1px solid var(--line); padding-top:16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="assets/node_exporter.png" alt="">
+    <div>
+      <h1>node_exporter for WD My Cloud EX2 Ultra</h1>
+      <p class="tag">A web-installable Prometheus node_exporter app for the Western Digital My Cloud EX2 Ultra (OS&nbsp;5).</p>
+    </div>
+  </header>
+
+  <div class="badges">
+    <a href="https://github.com/matanbaruch/node-exporter-mycloud/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/matanbaruch/node-exporter-mycloud/actions/workflows/ci.yml/badge.svg"></a>
+    <a href="https://github.com/matanbaruch/node-exporter-mycloud/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/matanbaruch/node-exporter-mycloud?sort=semver"></a>
+    <a href="https://github.com/matanbaruch/node-exporter-mycloud/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/License-BSD--3--Clause-blue.svg"></a>
+  </div>
+
+  <a class="cta" href="https://github.com/matanbaruch/node-exporter-mycloud/releases/latest">⬇ Download the latest .bin</a>
+  <a class="cta alt" href="https://github.com/matanbaruch/node-exporter-mycloud">View on GitHub</a>
+
+  <div class="panel">
+    <h2>What it does</h2>
+    <p>Runs <a href="https://prometheus.io/docs/guides/node-exporter/">Prometheus node_exporter</a> on your NAS, installed the
+    normal WD way — upload a <code>.bin</code> from <b>Apps → Install Manually</b> — then managed from a page right inside the
+    dashboard: set the listen port, flip collector toggles, start/stop the service. The exporter publishes the NAS's hardware
+    and OS metrics over HTTP for a Prometheus server to scrape. Your settings are stored on the persistent data volume, so they
+    survive reboots.</p>
+  </div>
+
+  <div class="panel">
+    <h2>Install</h2>
+    <ol>
+      <li>Download <code>MyCloudEX2Ultra_node_exporter_&lt;version&gt;.bin</code> from the
+        <a href="https://github.com/matanbaruch/node-exporter-mycloud/releases/latest">latest release</a>.</li>
+      <li>My Cloud dashboard → <b>Apps</b> → <b>Install an app manually</b> → pick the <code>.bin</code>
+        (see <a href="https://support-en.wd.com/app/answers/detailweb/a_id/29960">WD's OS5 guide</a>).</li>
+      <li>Open <b>Apps → Node Exporter</b>, set the listen port (default <code>9100</code>), pick collectors, click <b>Save &amp; restart</b>.</li>
+      <li>Scrape <code>http://&lt;nas-ip&gt;:9100/metrics</code> from your Prometheus server.</li>
+    </ol>
+  </div>
+
+  <div class="panel">
+    <h2>Web UI features</h2>
+    <div class="grid">
+      <div class="feat"><b>Listen port</b><span class="muted">Serve <code>/metrics</code> on any port (default 9100).</span></div>
+      <div class="feat"><b>Start / Stop / Restart</b><span class="muted">Control the exporter from the dashboard.</span></div>
+      <div class="feat"><b>Live status</b><span class="muted">Running state, version, port, sample metrics.</span></div>
+      <div class="feat"><b>Processes collector</b><span class="muted"><code>--collector.processes</code></span></div>
+      <div class="feat"><b>systemd collector</b><span class="muted"><code>--collector.systemd</code></span></div>
+      <div class="feat"><b>Textfile collector</b><span class="muted">Custom <code>*.prom</code> metrics.</span></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Build from source</h2>
+    <p class="muted">Requires Docker (the WD packaging tool is a Linux binary run inside the build image).</p>
+    <pre>git clone https://github.com/matanbaruch/node-exporter-mycloud
+cd node-exporter-mycloud
+./build.sh
+# -> packages/MyCloudEX2Ultra_node_exporter_&lt;version&gt;.bin</pre>
+    <p class="muted">The bundled node_exporter version is auto-bumped daily via a scheduled PR; merging it cuts a new release.</p>
+  </div>
+
+  <div class="panel">
+    <h2 class="warn">Status &amp; security</h2>
+    <p>Targets the My Cloud EX2 Ultra (firmware 5.33.102, ARMv7). Every change is round-trip-verified in CI
+    (APKG header, armv7 <code>node_exporter</code>, expected files), but this build has <b>not been confirmed on physical
+    hardware yet</b> — on-device execution is your final test.</p>
+    <p class="muted"><b>The metrics endpoint is unauthenticated and binds all interfaces.</b> Anyone who can reach the port can
+    read system metrics. Keep the NAS off the public internet and firewall the port to your Prometheus host — or expose it only
+    over a private overlay (e.g. pair it with
+    <a href="https://github.com/matanbaruch/tailscale-mycloud">tailscale-mycloud</a> and scrape over the tailnet).</p>
+  </div>
+
+  <footer>
+    BSD-3-Clause. Not affiliated with the Prometheus project or Western Digital. node_exporter is Apache-2.0, downloaded at
+    build time. Packaging tool from <a href="https://github.com/WDCommunity/wdpksrc">WDCommunity/wdpksrc</a>.
+  </footer>
+</div>
+</body>
+</html>

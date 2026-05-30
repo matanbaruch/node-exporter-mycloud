@@ -1,0 +1,11 @@
+Prometheus **node_exporter __VERSION__** packaged for the **WD My Cloud EX2 Ultra** (OS 5, linux-armv7).
+
+### Install
+1. Download `MyCloudEX2Ultra_node_exporter___VERSION__.bin` below.
+2. My Cloud dashboard → **Apps → Install an app manually** → choose the `.bin`.
+3. Open **Apps → Node Exporter**, set the listen port (default `9100`) and any collectors, click **Save & restart**.
+4. Point your Prometheus scrape target at `http://<nas-ip>:9100/metrics`.
+
+Verify the download against `SHA256SUMS.txt`. See the [README](https://github.com/matanbaruch/node-exporter-mycloud#readme) for usage and troubleshooting.
+
+> Built and round-trip-verified in CI (APKG header, armv7 `node_exporter`, expected files). On-device execution is your final test.

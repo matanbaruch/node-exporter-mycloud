@@ -1,0 +1,58 @@
+name: Bump node_exporter
+
+# Daily check for a newer stable node_exporter release. If found, bump the
+# version in node_exporter/apkg.rc (the single source of truth) and open a PR.
+# Merging that PR to main triggers release.yml, which builds and publishes the
+# new .bin.
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine current vs latest version
+        id: v
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          current="$(awk '/^Version:/{print $2}' node_exporter/apkg.rc)"
+          latest="$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" \
+            https://api.github.com/repos/prometheus/node_exporter/releases/latest \
+            | python3 -c "import sys,json;print(json.load(sys.stdin).get('tag_name','').lstrip('v'))")"
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+          echo "Current: $current   Latest: $latest"
+
+      - name: Update apkg.rc
+        if: steps.v.outputs.latest != '' && steps.v.outputs.latest != steps.v.outputs.current
+        run: |
+          sed -i "s/^Version:.*/Version:\t${{ steps.v.outputs.latest }}/" node_exporter/apkg.rc
+          grep '^Version:' node_exporter/apkg.rc
+
+      - name: Open pull request
+        if: steps.v.outputs.latest != '' && steps.v.outputs.latest != steps.v.outputs.current
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: bump/node-exporter-${{ steps.v.outputs.latest }}
+          commit-message: "chore: bump node_exporter to ${{ steps.v.outputs.latest }}"
+          title: "chore: bump node_exporter to ${{ steps.v.outputs.latest }}"
+          body: |
+            Automated bump of the bundled node_exporter version.
+
+            - `${{ steps.v.outputs.current }}` → `${{ steps.v.outputs.latest }}`
+
+            Merging this to `main` triggers the release workflow, which builds and
+            publishes `MyCloudEX2Ultra_node_exporter_${{ steps.v.outputs.latest }}.bin`.
+
+            > Note: PRs opened by the built-in token don't auto-run CI. Re-run CI by
+            > pushing an empty commit or closing/reopening this PR if you want pre-merge checks.
+          labels: dependencies

@@ -1,0 +1,64 @@
+name: Release
+
+# On every push to main, if the version in node_exporter/apkg.rc has no matching
+# v<version> release yet, build the .bin and publish a GitHub Release. Doing the
+# tag + build + release in one run avoids the "GITHUB_TOKEN-pushed tag doesn't
+# trigger workflows" pitfall (gh release create makes the tag for us).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read bundled version
+        id: ver
+        run: echo "version=$(awk '/^Version:/{print $2}' node_exporter/apkg.rc)" >> "$GITHUB_OUTPUT"
+
+      - name: Check whether release already exists
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "v${{ steps.ver.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Release v${{ steps.ver.outputs.version }} already exists; nothing to do."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build the .bin (Docker)
+        if: steps.check.outputs.exists == 'false'
+        run: ./build.sh
+
+      - name: Verify the package
+        if: steps.check.outputs.exists == 'false'
+        run: sh tests/test_package.sh
+
+      - name: Checksums
+        if: steps.check.outputs.exists == 'false'
+        run: (cd packages && sha256sum ./*.bin > SHA256SUMS.txt && cat SHA256SUMS.txt)
+
+      - name: Render release notes
+        if: steps.check.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: sed "s/__VERSION__/${VERSION}/g" .github/RELEASE_NOTES.md.tmpl > release-notes.md
+
+      - name: Create GitHub Release
+        if: steps.check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          gh release create "v${VERSION}" \
+            --title "node_exporter ${VERSION} for WD My Cloud EX2 Ultra" \
+            --notes-file release-notes.md \
+            packages/*.bin packages/SHA256SUMS.txt

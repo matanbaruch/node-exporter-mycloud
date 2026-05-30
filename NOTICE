@@ -1,0 +1,31 @@
+node-exporter-mycloud
+======================
+
+This project packages the Prometheus node_exporter as an installable app for
+Western Digital My Cloud (OS5) NAS devices. It bundles and builds on third-party
+components:
+
+1. mksapkg-OS5
+   - Source: https://github.com/WDCommunity/wdpksrc
+   - License: BSD 3-Clause (Copyright (c) 2018, WDCommunity)
+   - The packaging tool that produces the WD `.bin` (APKG) format. Vendored as
+     a prebuilt Linux x86-64 binary and executed only inside the build Docker
+     image. Not modified.
+
+2. Package structure / scripts
+   - Modeled on the ZeroTier package from WDCommunity/wdpksrc (BSD 3-Clause),
+     which targets the My Cloud EX2 Ultra on OS5, and on the sibling project
+     tailscale-mycloud (BSD 3-Clause).
+
+3. Prometheus node_exporter
+   - Source: https://github.com/prometheus/node_exporter  (https://prometheus.io)
+   - License: Apache License 2.0 (Copyright The Prometheus Authors)
+   - NOT vendored in this repository. The official static `linux-armv7` build is
+     downloaded from the project's GitHub Releases at build time and verified
+     against its published `sha256sums.txt` checksum before being placed in the
+     package.
+
+"Prometheus" and "WD My Cloud" are trademarks of their respective owners. This
+project is an independent, community effort and is not affiliated with,
+endorsed by, or sponsored by the Prometheus project, the Cloud Native Computing
+Foundation, or Western Digital.

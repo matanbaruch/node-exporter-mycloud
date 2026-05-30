@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install ruff
+        run: pip install "ruff==0.15.7"
+      - name: Ruff
+        run: ruff check .
+      - name: ShellCheck
+        run: shellcheck build.sh node_exporter/package-build.sh node_exporter/*.sh node_exporter/libexec/*.sh tests/test_package.sh
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install pytest
+        run: pip install pytest
+      - name: Unit tests
+        run: pytest -q
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the .bin (Docker)
+        run: ./build.sh
+      - name: Verify the package
+        run: sh tests/test_package.sh
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MyCloudEX2Ultra_node_exporter_bin
+          path: packages/*.bin
+          if-no-files-found: error
